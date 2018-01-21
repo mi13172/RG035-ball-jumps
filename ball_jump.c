@@ -3,11 +3,22 @@
 #include<GL/glut.h>
 
 static void on_display(void);
+static void on_keybord(unsigned char key,int x, int y);
+static void on_timer(int value);
+
 
 //kordinate lopte
 double transX=0.8;
 double transY=-0.8;
 double transZ=0;
+
+int action_time=25;
+
+//vrednos za koje se lopta pomera napred ili nazad
+double epsilon=0.05;
+int action1=1;
+int value=0;
+float eps=0.03;
 
 
 int main(int argc,char **argv){
@@ -22,7 +33,8 @@ int main(int argc,char **argv){
 	
 	/*funkcija za poziv scene koja ce da se desava na pozornici on_display*/	
 	glutDisplayFunc(on_display);	
-	
+	//funkcija za tastere
+	glutKeyboardFunc(on_keybord);
 	//OPEN GL Inicijalizacija 	
 	glClearColor(0.75, 0.75, 0.75, 0);
 
@@ -45,5 +57,70 @@ static void on_display(void){
      
      	glutSwapBuffers();
 
+}
+static void on_keybord(unsigned char key,int x, int y){
+
+	switch(key){
+	case 27:
+	exit(0);
+	break;
+	case 'a':
+	case 'A':
+	if(transX>(-1+0.07)){
+		transX-=epsilon;}
+	 glutPostRedisplay();
+	break;
+	case 'd':
+	case 'D':
+	if(transX<(1-0.09)){
+		transX+=epsilon;}
+	 glutPostRedisplay();
+	break;
+	case 'w':
+	case 'W':
+		if(action1){
+		action1=0;
+		value=0;
+		glutTimerFunc(action_time,on_timer, value);
+		   }
+	break;
+	
+	case 's':
+	case 'S':
+	printf("ssss");
+		break;	
+}
+
+}
+static void on_timer(int value)
+{
+    /* Proverava se da li callback dolazi od odgovarajuceg tajmera. */
+    if (value != 0)
+        return;
+
+    /* Azurira se vreme simulacije. */
+	if(!action1){
+	 	
+	  transY+=eps;
+	  /*if(transX<(1+0.07) && transX>(-1+0.07))	
+	  	transX-=epss;*/
+	  if(transY>-0.2)
+		 action1=1;		
+	}
+       else {    
+		transY-=eps;
+	/*if(transX<(1+0.07) && transX>(-1+0.07))
+		transX-=epss;*/
+	     if(transY<-0.8){
+		transY=-0.8;
+		value=1;}
+			}
+	
+    /* Forsira se ponovno iscrtavanje prozora. */
+    glutPostRedisplay();
+
+    /* Po potrebi se ponovo postavlja tajmer. */
+    
+        glutTimerFunc(action_time, on_timer, value);
 }
 
