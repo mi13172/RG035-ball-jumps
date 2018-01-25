@@ -46,6 +46,7 @@ return 0;
 static void on_display(void){
 	// brisanje postojece pozadine 
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	
 	//pusujemo jedinicnu maticu na stek 
 	glPushMatrix();
 	glColor3f(0.33,0.5,0.25);
@@ -54,7 +55,27 @@ static void on_display(void){
 	//iscrtavamo sveru u translirani kordinatni sistem
     	glutSolidSphere(0.06,20,20);
 	glPopMatrix();
-     
+        
+	//iscrtavanje trake koja ce da simuluira pokretnu traku 		
+	glPushMatrix();
+	 glColor3f(0,1,0);
+	 glTranslatef(0,-0.87,0);
+	 glScalef(2,1,0);
+	 glBegin(GL_LINE_STRIP);
+          glVertex3f(0.5,0,0.3);
+	  glVertex3f(0.5,0,-0.3);
+	  glVertex3f(-0.5,0,-0.3);
+	  glVertex3f(-0.5,0,0.3);	
+	 glEnd();
+	glPopMatrix();
+        
+        //iscrtava se kocka na mesto gde treba doci cunak 
+	glPushMatrix();
+	glColor3f(1,1,0.5);
+	glTranslatef(-0.9,0.6,1);
+	glutSolidCube(0.2);	
+	glPopMatrix();
+	
      	glutSwapBuffers();
 
 }
