@@ -5,21 +5,38 @@
 static void on_display(void);
 static void on_keybord(unsigned char key,int x, int y);
 static void on_timer(int value);
-
+static void on_timer1(int value);
+static void on_display1(void);
+void functionstop(double transX,double transY,double transX1,double transY1);
 
 //kordinate lopte
 double transX=0.8;
 double transY=-0.8;
 double transZ=0;
 
-int action_time=25;
+//kordinate lopte koja  ce simulirati kretnju 
+
+double transX1=-0.9;
+double transY1=0.6;
+double transZ1=0;
+
+//vreme za koje se tajmeri pozivaju
+int action_time=30;
+int action_time1=50;
 
 //vrednos za koje se lopta pomera napred ili nazad
 double epsilon=0.05;
-int action1=1;
-int value=0;
-float eps=0.03;
 
+//predstavljanje akcije po koja ce da znaci da li se lopta spusta ili se krece po traci
+int action1=1;
+int action2=1;
+int action3=1;
+//vrednost za tajmer
+int value=0;
+int value1=0;
+//pokretanje lopte
+double eps=0.03;
+double epss=0.08;
 
 int main(int argc,char **argv){
 	//inicijalizacija gluta 	
@@ -35,7 +52,10 @@ int main(int argc,char **argv){
 	glutDisplayFunc(on_display);	
 	//funkcija za tastere
 	glutKeyboardFunc(on_keybord);
-	//OPEN GL Inicijalizacija 	
+	 
+	glutTimerFunc(action_time1,on_timer1, value1);
+	
+	//OPEN GL Inicijalizacija 
 	glClearColor(0.75, 0.75, 0.75, 0);
 
 	//Program ulazi u glavnu petlju
@@ -76,6 +96,24 @@ static void on_display(void){
 	glutSolidCube(0.2);	
 	glPopMatrix();
 	
+	 on_display1();
+       if(action2){
+	  transY1-=eps;
+ 	  if(transY1<-0.8){
+	  transY1=-0.80;
+	  action2=0;
+			  }
+	         }
+       else{
+          transX1+=eps;
+	  if(transX1>1){
+	     transX1=-0.9;
+	     transY1=0.6;	
+	     action2=1;
+			}
+	  }
+	 functionstop(transX,transY,transX1,transY1);		
+	
      	glutSwapBuffers();
 
 }
@@ -99,17 +137,14 @@ static void on_keybord(unsigned char key,int x, int y){
 	break;
 	case 'w':
 	case 'W':
-		if(action1){
+		if(action1 & action3){
 		action1=0;
 		value=0;
 		glutTimerFunc(action_time,on_timer, value);
 		   }
 	break;
 	
-	case 's':
-	case 'S':
-	printf("ssss");
-		break;	
+		
 }
 
 }
@@ -122,14 +157,14 @@ static void on_timer(int value)
     /* Azurira se vreme simulacije. */
 	if(!action1){
 	 	
-	  transY+=eps;
+	  transY+=epss;
 	  /*if(transX<(1+0.07) && transX>(-1+0.07))	
 	  	transX-=epss;*/
 	  if(transY>-0.2)
 		 action1=1;		
 	}
        else {    
-		transY-=eps;
+		transY-=epss;
 	/*if(transX<(1+0.07) && transX>(-1+0.07))
 		transX-=epss;*/
 	     if(transY<-0.8){
@@ -144,4 +179,43 @@ static void on_timer(int value)
     
         glutTimerFunc(action_time, on_timer, value);
 }
+static void on_timer1(int value){
+	 /* Proverava se da li callback dolazi od odgovarajuceg tajmera. */
+    if (value1 != 0)
+        return;
 
+    /* Azurira se vreme simulacije. */
+	eps=0.03;
+    /* Forsira se ponovno iscrtavanje prozora. */
+    glutPostRedisplay();
+   
+    /* Po potrebi se ponovo postavlja tajmer. */
+    
+	
+	if(action_time1>4)
+		action_time1-=0.0001;
+       
+	glutTimerFunc(action_time1, on_timer1, value);
+
+}
+void functionstop(double transX,double transY,double transX1,double transY1){
+	
+  if((transX1+0.06>=transX-0.06 && transX+0.06>=transX1-0.06) && transY1+0.01>=transY ){
+	printf("usao je :\n");	
+	value1=1;
+	value=1;
+	action3=0;		
+	}
+		
+};
+static void on_display1(void){
+	glPushMatrix();
+	glColor3f(1,0,0);
+	glTranslatef(transX1,transY1,transZ1);
+	
+    	glutSolidTeapot(0.06);
+
+	
+	glPopMatrix();
+
+}
