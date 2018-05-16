@@ -1,17 +1,6 @@
-PROGRAM   = ball_jump
-CC        = gcc
-CFLAGS    = -g 
-LDFLAGS   = -lGL -lGLU -lglut -lm
+TARGET= ball-jump
+CC= gcc -std=c99 -Wall -Wextra -g
+SRC= $(shell find ./ -name *.c)
 
-$(PROGRAM): ball_jump.o
-	$(CC) -o $(PROGRAM) ball_jump.o $(LDFLAGS)
-
-.PHONY: clean dist
-
-clean:
-	-rm *.o $(PROGRAM) *core
-
-dist: clean
-	-tar -chvj -C .. -f ../$(PROGRAM).tar.bz2 $(PROGRAM)
-
-
+$(TARGET): $(SRC)
+	gcc $^ -o $@ -lGL -lGLU -lglut
