@@ -7,7 +7,8 @@
 #define CAMERA_Z_OFFSET -3
 #define CAMERA_SENSITIVITY .1
 #define JUMP_INTENSITY .05
-#define GRAVITY .005
+#define GRAVITY .0005
+#define BALL_RADIUS .5
 
 typedef enum {
   TRACK_LEFT,
@@ -25,9 +26,10 @@ typedef struct ballPosition_ {
 
 //MODEL
 BallPosition ballPosition;
+double movSpeed = .1;
 double movVector[3];
-double backLine = 0;
-double frontLine = 10;
+double backLine = -0.5;
+double frontLine = -5;
 double dropLine = 20;
 double cameraPosition[3];
 
@@ -103,7 +105,9 @@ void render()
 	    1.5, 0, ballPosition.z - 5,
 	    0, 1, 0);
 
-  //radimo updejt modela
+  //radimo UPDATE modela
+
+  //dodavanje vektora pokreta
   if(movVector[0]) {
     ballPosition.x += movVector[0];
   }
@@ -113,10 +117,14 @@ void render()
   if(movVector[2]) {
     ballPosition.z += movVector[2];
   }
-  
+
+  //fixirati kameru za loput po z koord
+  cameraPosition[2] = ballPosition.z - CAMERA_Z_OFFSET;
+
+  //dodavanje gravitacije
   if(ballPosition.y){
     movVector[1] -= GRAVITY;
-    if(ballPosition.y < 0) ballPosition.y = 0;
+    if(ballPosition.y < BALL_RADIUS) ballPosition.y = BALL_RADIUS;
   }
   
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -154,18 +162,18 @@ void onSpecial(int key, int x, int y)
 void onKeyboard(unsigned char c, int x, int y)
 {
   switch(c) {
-  case 'o': //lijevo
+  case 'a': //lijevo
     commandLeft();
     break;
-  case 'u': //desno
+  case 'd': //desno
     commandRight();
     break;
 
-  case 'e': //nazad
+  case 's': //nazad
     commandBack();
     break;
 
-  case '.': //napred
+  case 'w': //napred
     commandForward();
     break;
   case ' ':
@@ -177,19 +185,23 @@ void onKeyboard(unsigned char c, int x, int y)
 
 void commandLeft()
 {
-  
+  ballPosition.x -= 1;
+  if(ballPosition.x < 0) ballPosition.x = .5;
 }
 void commandRight()
 {
-
+  ballPosition.x += 1;
+  if(ballPosition.x > 3) ballPosition.x = 2.5;
 }
 void commandBack()
 {
-
+  ballPosition.z += movSpeed;
+  if(ballPosition.z > backLine) ballPosition.z = backLine;
 }
 void commandForward()
 {
-
+  ballPosition.z -= movSpeed;
+  if(ballPosition.z < frontLine) ballPosition.z = frontLine;
 }
 void commandJump()
 {
@@ -199,7 +211,7 @@ void initModel()
 {
   //na pocetku u sredini
   ballPosition.x = 1.5;
-  ballPosition.y = .5;
+  ballPosition.y = BALL_RADIUS;
   ballPosition.z = backLine;
 
   movVector[0] = 0;
@@ -213,7 +225,7 @@ void initModel()
 
 void commandCameraUp()
 {
-  cameraPosition[2] += CAMERA_SENSITIVITY;
+  cameraPosition[0] += CAMERA_SENSITIVITY;
 }
 void commandCameraDown()
 {
@@ -225,7 +237,7 @@ void commandCameraLeft()
 }
 void commandCameraRight()
 {
-  cameraPosition[0] += CAMERA_SENSITIVITY;
+  cameraPosition[2] += CAMERA_SENSITIVITY;
 }
 
 void drawPath()
@@ -265,7 +277,7 @@ void drawBall()
   glPushMatrix();
 
   glTranslatef(ballPosition.x, ballPosition.y, ballPosition.z);
-  glutSolidSphere(.5, 10, 10);
+  glutSolidSphere(BALL_RADIUS, 20, 20);
 
   glPopMatrix();
 }
