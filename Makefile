@@ -3,4 +3,4 @@ CC= gcc -std=c99 -Wall -Wextra -g
 SRC= $(shell find ./ -name *.c)
 
 $(TARGET): $(SRC)
-	gcc $^ -o $@ -lGL -lGLU -lglut
+	gcc $^ -o $@ -lGL -lGLU -lglut -lm

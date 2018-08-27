@@ -1,22 +1,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <GL/glut.h>
-#include <time.h>
-#include <math.h>
 
 #define PATH_LENGTH -100
 #define CAMERA_HEIGHT 5
 #define CAMERA_Z_OFFSET -3
 #define CAMERA_SENSITIVITY .1
 #define JUMP_INTENSITY .05
-#define GRAVITY .0005
-#define BALL_RADIUS .5
-//ne manje od 0 i sto je manji parametar to je teza igra
-#define DIFICULTY 10
-#define DIFICULTY_ITEM_NUMBER 10
-#define DIFICULTY_FREQUENCY 1000
-
-#define MAX_PREDMETA 100
+#define GRAVITY .005
 
 typedef enum {
   TRACK_LEFT,
@@ -34,16 +25,12 @@ typedef struct ballPosition_ {
 
 //MODEL
 BallPosition ballPosition;
-double movSpeed = .1;
 double movVector[3];
-double backLine = -0.5;
-double frontLine = -5;
+double backLine = 0;
+double frontLine = 10;
 double dropLine = 20;
 double cameraPosition[3];
 
-int brojSekundi = 0;
-
-double predmeti[3][MAX_PREDMETA];
 
 void initModel();
 
@@ -52,8 +39,6 @@ void drawTriangle();
 void render();
 void onKeyboard(unsigned char c , int x , int y);
 void onSpecial(int key, int x, int y);
-void onTimer(int id);
-void onBacanje(int id);
 
 void commandLeft();
 void commandRight();
@@ -70,10 +55,6 @@ void drawPath();
 void drawBall();
 void drawObstacles();
 
-//pomocne f-je
-int getKardinalnost(int timer);
-int getFrekvencija(int timer);
-
 int main(int argc, char** argv)
 {
   glutInit(&argc, argv);
@@ -84,16 +65,10 @@ int main(int argc, char** argv)
 
   initModel();
   initGL();
-  //incijalizacija random generator
-  srand(time(NULL));
 
   glutSpecialFunc(onSpecial);
   glutDisplayFunc(render);
   glutKeyboardFunc(onKeyboard);
-  glutTimerFunc(1000, onTimer, 1);
-
-  //postavljamo timer za bacanje predmeta
-  glutTimerFunc(1000, onBacanje, 2);
   
   glutMainLoop();
 
@@ -121,16 +96,14 @@ void initGL()
 }
 
 void render()
-{  
+{
   //postavimo pogle kamere za svako crtanje
   glLoadIdentity();
   gluLookAt(cameraPosition[0], cameraPosition[1], cameraPosition[2],
 	    1.5, 0, ballPosition.z - 5,
 	    0, 1, 0);
 
-  //radimo UPDATE modela
-
-  //dodavanje vektora pokreta
+  //radimo updejt modela
   if(movVector[0]) {
     ballPosition.x += movVector[0];
   }
@@ -140,14 +113,10 @@ void render()
   if(movVector[2]) {
     ballPosition.z += movVector[2];
   }
-
-  //fixirati kameru za loput po z koord
-  cameraPosition[2] = ballPosition.z - CAMERA_Z_OFFSET;
-
-  //dodavanje gravitacije
+  
   if(ballPosition.y){
     movVector[1] -= GRAVITY;
-    if(ballPosition.y < BALL_RADIUS) ballPosition.y = BALL_RADIUS;
+    if(ballPosition.y < 0) ballPosition.y = 0;
   }
   
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -185,18 +154,18 @@ void onSpecial(int key, int x, int y)
 void onKeyboard(unsigned char c, int x, int y)
 {
   switch(c) {
-  case 'a': //lijevo
+  case 'o': //lijevo
     commandLeft();
     break;
-  case 'd': //desno
+  case 'u': //desno
     commandRight();
     break;
 
-  case 's': //nazad
+  case 'e': //nazad
     commandBack();
     break;
 
-  case 'w': //napred
+  case '.': //napred
     commandForward();
     break;
   case ' ':
@@ -208,23 +177,19 @@ void onKeyboard(unsigned char c, int x, int y)
 
 void commandLeft()
 {
-  ballPosition.x -= 1;
-  if(ballPosition.x < 0) ballPosition.x = .5;
+  
 }
 void commandRight()
 {
-  ballPosition.x += 1;
-  if(ballPosition.x > 3) ballPosition.x = 2.5;
+
 }
 void commandBack()
 {
-  ballPosition.z += movSpeed;
-  if(ballPosition.z > backLine) ballPosition.z = backLine;
+
 }
 void commandForward()
 {
-  ballPosition.z -= movSpeed;
-  if(ballPosition.z < frontLine) ballPosition.z = frontLine;
+
 }
 void commandJump()
 {
@@ -234,7 +199,7 @@ void initModel()
 {
   //na pocetku u sredini
   ballPosition.x = 1.5;
-  ballPosition.y = BALL_RADIUS;
+  ballPosition.y = .5;
   ballPosition.z = backLine;
 
   movVector[0] = 0;
@@ -300,38 +265,11 @@ void drawBall()
   glPushMatrix();
 
   glTranslatef(ballPosition.x, ballPosition.y, ballPosition.z);
-  glutSolidSphere(BALL_RADIUS, 20, 20);
+  glutSolidSphere(.5, 10, 10);
 
   glPopMatrix();
 }
 void drawObstacles()
 {
 
-}
-
-void onTimer(int id)
-{
-  brojSekundi++;
-  glutTimerFunc(1000, onTimer, 1);
-  printf("%d\n", brojSekundi);
-}
-void onBacanje(int id)
-{
-  if(id != 2) return;
-
-  int broj = getKardinalnost(brojSekundi);
-
-  printf("bacio bih %d predmeta u %d\n" , broj, brojSekundi);
-  glutTimerFunc(getFrekvencija(brojSekundi), onBacanje, id);
-}
-
-int getKardinalnost(int timer)
-{
-  //hocemo max 6 predmeta i min 1 pa korigujemo actg vrednost
-  return floor(1 + DIFICULTY_ITEM_NUMBER * atan(timer / DIFICULTY) / M_PI);
-}
-int getFrekvencija(int timer)
-{
-  //baca negde izmedju 1 i 3 sec
-  return floor(1000 + DIFICULTY_FREQUENCY* atan(-timer/ DIFICULTY) / M_PI);
 }
