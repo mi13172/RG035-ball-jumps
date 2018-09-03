@@ -2,6 +2,8 @@
 #include <stdlib.h>
 #include <GL/glut.h>
 
+#in
+
 #define PATH_LENGTH -100
 #define CAMERA_HEIGHT 5
 #define CAMERA_Z_OFFSET -3

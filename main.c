@@ -4,75 +4,22 @@
 #include <time.h>
 #include <math.h>
 
-#define PATH_LENGTH -100
-#define CAMERA_HEIGHT 5
-#define CAMERA_Z_OFFSET -3
-#define CAMERA_SENSITIVITY .1
-#define JUMP_INTENSITY .05
-#define GRAVITY .0005
-#define BALL_RADIUS .5
-//ne manje od 0 i sto je manji parametar to je teza igra
-#define DIFICULTY 10
-#define DIFICULTY_ITEM_NUMBER 10
-#define DIFICULTY_FREQUENCY 1000
+#include "draw.h"
+#include "model.h"
+#include "misc.h"
+#include "commands.h"
 
-#define MAX_PREDMETA 100
 
-typedef enum {
-  TRACK_LEFT,
-  TRACK_RIGHT,
-  TRACK_MIDDLE
-} Track;
-
-typedef struct ballPosition_ {
-  double x;
-  double y;
-  double z;
-  Track t;
-  
-} BallPosition;
-
-//MODEL
-BallPosition ballPosition;
-double movSpeed = .1;
-double movVector[3];
-double backLine = -0.5;
-double frontLine = -5;
-double dropLine = 20;
-double cameraPosition[3];
-
-int brojSekundi = 0;
-
-double predmeti[3][MAX_PREDMETA];
-
-void initModel();
 
 void initGL();
-void drawTriangle();
 void render();
 void onKeyboard(unsigned char c , int x , int y);
 void onSpecial(int key, int x, int y);
 void onTimer(int id);
 void onBacanje(int id);
 
-void commandLeft();
-void commandRight();
-void commandBack();
-void commandForward();
-void commandJump();
 
-void commandCameraUp();
-void commandCameraDown();
-void commandCameraLeft();
-void commandCameraRight();
 
-void drawPath();
-void drawBall();
-void drawObstacles();
-
-//pomocne f-je
-int getKardinalnost(int timer);
-int getFrekvencija(int timer);
 
 int main(int argc, char** argv)
 {
@@ -120,6 +67,7 @@ void initGL()
   
 }
 
+//glavna petlja igre
 void render()
 {  
   //postavimo pogle kamere za svako crtanje
@@ -130,7 +78,12 @@ void render()
 
   //radimo UPDATE modela
 
-  //dodavanje vektora pokreta
+  //pomeramo predmete
+  for(int i = poceteniIndex; i < krajnjiIndex; i++, i %= MAX_PREDMETA) {
+    predmeti[i][2] += DIFICULTY_SPEED;
+  }
+
+  //dodavanje vektora pokreta lopti
   if(movVector[0]) {
     ballPosition.x += movVector[0];
   }
@@ -147,8 +100,31 @@ void render()
   //dodavanje gravitacije
   if(ballPosition.y){
     movVector[1] -= GRAVITY;
-    if(ballPosition.y < BALL_RADIUS) ballPosition.y = BALL_RADIUS;
+    if(ballPosition.y < BALL_RADIUS
+       && //samo ako je lopta na stazi
+       (ballPosition.x <= 3 && ballPosition.x >= 0)
+       ) ballPosition.y = BALL_RADIUS;
   }
+  //dodavanje trenja
+  int tmp = sgnMovVecX;
+  if(movVector[0]) {
+    printf("%lf \n", movVector[0]);
+    
+    if(sgnMovVecX > 0) {
+      movVector[0] -= FRICTION;
+      if(movVector[0] < 0) sgnMovVecX = -1;
+    }
+    else {
+      movVector[0] += FRICTION;
+      if(movVector[0] > 0) sgnMovVecX = 1;
+    }
+
+    //korekcija
+    if(tmp != sgnMovVecX) movVector[0] = 0;
+  }
+
+  //gledamo da li ima kolizije
+  
   
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -206,30 +182,6 @@ void onKeyboard(unsigned char c, int x, int y)
   }
 }
 
-void commandLeft()
-{
-  ballPosition.x -= 1;
-  if(ballPosition.x < 0) ballPosition.x = .5;
-}
-void commandRight()
-{
-  ballPosition.x += 1;
-  if(ballPosition.x > 3) ballPosition.x = 2.5;
-}
-void commandBack()
-{
-  ballPosition.z += movSpeed;
-  if(ballPosition.z > backLine) ballPosition.z = backLine;
-}
-void commandForward()
-{
-  ballPosition.z -= movSpeed;
-  if(ballPosition.z < frontLine) ballPosition.z = frontLine;
-}
-void commandJump()
-{
-  movVector[1] = JUMP_INTENSITY;
-}
 void initModel()
 {
   //na pocetku u sredini
@@ -246,92 +198,54 @@ void initModel()
   cameraPosition[2] = ballPosition.z - CAMERA_Z_OFFSET;
 }
 
-void commandCameraUp()
-{
-  cameraPosition[2] += CAMERA_SENSITIVITY;
-}
-void commandCameraDown()
-{
-  cameraPosition[2] -= CAMERA_SENSITIVITY;
-}
-void commandCameraLeft()
-{
-  cameraPosition[0] -= CAMERA_SENSITIVITY;
-}
-void commandCameraRight()
-{
-  cameraPosition[0] += CAMERA_SENSITIVITY;
-}
-
-void drawPath()
-{ //ovi su uvijek u ravni pa ne mora triangles. Nema transformacija nad stazom
-
-  //lijeva staza
-  glColor3f(1, 0, 0);
-  glBegin(GL_QUADS);
-  glVertex3i(0, 0, 0);
-  glVertex3i(1, 0, 0);
-  glVertex3i(1, 0, PATH_LENGTH);
-  glVertex3i(0, 0, PATH_LENGTH);
-  glEnd();
-
-  //srednja staza
-  glColor3f(0, 1, 0);
-  glBegin(GL_QUADS);
-  glVertex3i(1, 0, 0);
-  glVertex3i(2, 0, 0);
-  glVertex3i(2, 0, PATH_LENGTH);
-  glVertex3i(1, 0, PATH_LENGTH);
-  glEnd();
-
-  //desna staza
-  glColor3f(0, 0, 1);
-  glBegin(GL_QUADS);
-  glVertex3i(2, 0, 0);
-  glVertex3i(3, 0, 0);
-  glVertex3i(3, 0, PATH_LENGTH);
-  glVertex3i(2, 0, PATH_LENGTH);
-  glEnd();
-
-}
-void drawBall()
-{
-  glColor3f(1, .5, 1);
-  glPushMatrix();
-
-  glTranslatef(ballPosition.x, ballPosition.y, ballPosition.z);
-  glutSolidSphere(BALL_RADIUS, 20, 20);
-
-  glPopMatrix();
-}
-void drawObstacles()
-{
-
-}
 
 void onTimer(int id)
 {
   brojSekundi++;
   glutTimerFunc(1000, onTimer, 1);
-  printf("%d\n", brojSekundi);
 }
 void onBacanje(int id)
 {
   if(id != 2) return;
+  //azuriramo brzinu trako
+  //DIFICULTY_SPEED = getSpeed(brojSekundi);
 
+  //koliko kutija se baca
   int broj = getKardinalnost(brojSekundi);
 
-  printf("bacio bih %d predmeta u %d\n" , broj, brojSekundi);
+  //pravimo podskup od broj clanova od 0 do 9
+  int pozicije[broj];
+  int brojNapravljenihKoordinata = 0;
+
+  for(int i = 0; i < broj; i++) {
+    int kandidat = rand() % 9;
+    while(nizSadrzi(kandidat, pozicije, brojNapravljenihKoordinata))
+      kandidat = rand() % 9;
+
+    pozicije[i] = kandidat;
+    brojNapravljenihKoordinata++;
+  }
+
+  //kopiramo podskup u niz predmeta
+  for(int i = 0; i < broj; i++) {
+    //da li ima mesta
+    if(krajnjiIndex == poceteniIndex && jePopunjeno){ 
+      fprintf(stderr, "Nema mesta za ubacivanje predmeta\n");
+      exit(1);
+    }
+    
+    int index = krajnjiIndex;
+    //racunamo kordinate u xy ravni
+    predmeti[index][0] = pozicije[i] % 3;
+    predmeti[index][1] = pozicije[i] / 3;
+    predmeti[index][2] = PATH_LENGTH;
+
+    //kruzna korekcija indexa u nizu fixne velicine
+    krajnjiIndex++;
+    if(krajnjiIndex == MAX_PREDMETA) krajnjiIndex %= MAX_PREDMETA;
+    if(krajnjiIndex == poceteniIndex) jePopunjeno = 1;
+  }
+
   glutTimerFunc(getFrekvencija(brojSekundi), onBacanje, id);
 }
 
-int getKardinalnost(int timer)
-{
-  //hocemo max 6 predmeta i min 1 pa korigujemo actg vrednost
-  return floor(1 + DIFICULTY_ITEM_NUMBER * atan(timer / DIFICULTY) / M_PI);
-}
-int getFrekvencija(int timer)
-{
-  //baca negde izmedju 1 i 3 sec
-  return floor(1000 + DIFICULTY_FREQUENCY* atan(-timer/ DIFICULTY) / M_PI);
-}

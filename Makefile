@@ -1,6 +1,7 @@
 TARGET= ball-jump
 CC= gcc -std=c99 -Wall -Wextra -g
-SRC= $(shell find ./ -name *.c)
+SRC= $(shell ls *.c)
+HDR= $(shell ls *.h)
 
-$(TARGET): $(SRC)
+$(TARGET): $(SRC) $(HDR)
 	gcc $^ -o $@ -lGL -lGLU -lglut -lm
